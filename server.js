@@ -1,6 +1,7 @@
 require('dotenv/config')
 const fastify = require("fastify")({ logger: true })
 const mongoose = require("mongoose")
+const routes = require('./routes/index')
 
 try {
     mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
@@ -18,3 +19,7 @@ try {
         process.exit(1)
     }
 })()
+
+routes.forEach((route, index) => {
+    fastify.route(route)
+})
