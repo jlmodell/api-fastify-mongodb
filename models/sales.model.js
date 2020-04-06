@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 
-const saleSchema =  new mongoose.Schema({
+const salesSchema =  new mongoose.Schema({
     ID: String,
     YEAR: String,
     DATE: Date,
@@ -18,4 +18,4 @@ const saleSchema =  new mongoose.Schema({
     COMMISSIONS: Number
 })
 
-module.exports = mongoose.model('Sale', saleSchema)
+module.exports = mongoose.model('Sales', salesSchema)
