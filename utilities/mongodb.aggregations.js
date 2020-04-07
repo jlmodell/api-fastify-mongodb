@@ -1,4 +1,4 @@
-exports.Aggregations = (start, end, item, cust) => {
+exports.DEFAULT_AGG = (start, end, item, cust) => {
 	let aggregation;
 
 	if (item && !cust) {
@@ -107,8 +107,7 @@ exports.Aggregations = (start, end, item, cust) => {
 	return aggregation;
 };
 
-exports.calcFrOhCom = function(freightFactor, overheadFactor) {
-	let frOhCom;
+exports.CALC_FR_OH_COMM = function(freightFactor, overheadFactor) {	
 	let ff = freightFactor;
 	let ohf = overheadFactor;
 
@@ -142,7 +141,7 @@ exports.calcFrOhCom = function(freightFactor, overheadFactor) {
 	}
 } 
 
-exports.tradefees = {
+exports.TRADEFEES = {
     $addFields: {
         tradefees: {
             $cond: {
@@ -254,7 +253,7 @@ exports.tradefees = {
     }
 }
 
-exports.grossProfit = {
+exports.GP = {
 	$addFields: {
 		grossProfit: {
 			$cond: {
@@ -276,7 +275,7 @@ exports.grossProfit = {
 	}
 };
 
-exports.grossProfitMargin = {
+exports.GPM = {
 	$addFields: {
 		grossProfitMargin: {
 			$cond: {
@@ -288,7 +287,7 @@ exports.grossProfitMargin = {
 	}
 };
 
-exports.avgSalePrice = {
+exports.AVG_SALE_PRICE = {
 	$addFields: {
 		avgSalePrice: {
 			$cond: {
@@ -307,7 +306,7 @@ exports.avgSalePrice = {
 	}
 };
 
-exports.avgSalePriceAfterDiscounts = {
+exports.AVG_DISCOUNTED_PRICE = {
 	$addFields: {
 		avgSalePriceAfterDiscounts: {
 			$cond: {
@@ -328,3 +327,22 @@ exports.avgSalePriceAfterDiscounts = {
 		}
 	}
 };
+
+exports.SALES_BY_QUANT_AGGREGATION = (start, end, item) => {    
+    return [
+        {
+            $match: {
+                DATE: { $gte: new Date(start), $lte: new Date(end) },
+                ITEM: item
+            }
+        },
+        {
+            $group: {
+                _id: {
+                    date: '$DATE',                    
+                },
+                quantity: { $sum: '$QTY' },                
+            }
+        }
+    ]
+}
