@@ -58,3 +58,20 @@ async function Router(fastify) {
 module.exports = Router
 
 
+/*
+
+const variables = [
+    { start: "2019-01-01", end: "2019-12-31", item: "2914", ff: "2", ohf: "2" },
+    { start: "2018-01-01", end: "2018-12-31", item: "2914", ff: "2", ohf: "2" },
+    { start: "2017-01-01", end: "2017-12-31", item: "2914", ff: "2", ohf: "2" },
+   ]
+   
+for (let i=0;i<variables.length;i++) {
+    fetch(`http://localhost:9090/api/sale/item?start=${variables[i].start}&end=${variables[i].end}&item=${variables[i].item}`,{
+        method: "GET",
+        headers: {Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im1vZGVsbC5qZWZmQG1lLmNvbSIsImlhdCI6MTU4NjE3MTQwNCwiZXhwIjoxNTg3NDY3NDA0fQ.vfSZm7Y4mYPBMFeiXuFHvKPuvy71sx3jIjnlB4dUWgo"},
+    }).then(res => res.json()).then(console.log)
+}
+
+
+*/
