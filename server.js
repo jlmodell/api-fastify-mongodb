@@ -23,7 +23,7 @@ try {
 
 (async () => {
     try {
-        await fastify.listen(9090)
+        await fastify.listen(9090, '0.0.0.0')
         fastify.log.info(`API is listening on ${fastify.server.address().port}`)
     } catch(err) {
         fastify.log.error(err)
