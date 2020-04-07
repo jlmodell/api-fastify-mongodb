@@ -12,3 +12,6 @@ docker_run:
 
 docker_remove:
 	docker stop busse-api-v3-9090 && docker image rm -f busse-api-v3-9090
+
+git:
+	git commit -m "updates" && git push
