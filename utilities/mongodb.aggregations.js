@@ -20,9 +20,9 @@ exports.Aggregations = (start, end, item, cust) => {
 					costs: { $sum: { $round: [ '$COST', 2 ] } },
 					rebates: { $sum: { $round: [ { $multiply: [ '$REBATECREDIT', -1 ] }, 2 ] } },
                     // tradefees: { $sum: { $round: [ '$TRADEFEES', 2 ] } },
-                    freight: { $sum: { $round: [ '$FREIGHT', 2 ] } },
-                    overhead: { $sum: { $round: [ '$OVERHEAD', 2 ] } },
-                    commissions: { $sum: { $round: [ '$COMMISSIONS', 2 ] } },
+                    // freight: { $sum: { $round: [ '$FREIGHT', 2 ] } },
+                    // overhead: { $sum: { $round: [ '$OVERHEAD', 2 ] } },
+                    // commissions: { $sum: { $round: [ '$COMMISSIONS', 2 ] } },
 				}
 			}
 		];
@@ -44,10 +44,10 @@ exports.Aggregations = (start, end, item, cust) => {
 					sales: { $sum: { $round: [ '$SALE', 2 ] } },
 					costs: { $sum: { $round: [ '$COST', 2 ] } },
                     rebates: { $sum: { $round: [ { $multiply: [ '$REBATECREDIT', -1 ] }, 2 ] } },
-                    // tradefees: { $sum: { $round: [ '$TRADEFEES', 2 ] } },
-                    freight: { $sum: { $round: [ '$FREIGHT', 2 ] } },
-                    overhead: { $sum: { $round: [ '$OVERHEAD', 2 ] } },
-                    commissions: { $sum: { $round: [ '$COMMISSIONS', 2 ] } },
+                    // // tradefees: { $sum: { $round: [ '$TRADEFEES', 2 ] } },
+                    // freight: { $sum: { $round: [ '$FREIGHT', 2 ] } },
+                    // overhead: { $sum: { $round: [ '$OVERHEAD', 2 ] } },
+                    // commissions: { $sum: { $round: [ '$COMMISSIONS', 2 ] } },
 				}
 			}
 		];
@@ -73,9 +73,9 @@ exports.Aggregations = (start, end, item, cust) => {
 					costs: { $sum: { $round: [ '$COST', 2 ] } },
 					rebates: { $sum: { $round: [ { $multiply: [ '$REBATECREDIT', -1 ] }, 2 ] } },
                     // tradefees: { $sum: { $round: [ '$TRADEFEES', 2 ] } },
-                    freight: { $sum: { $round: [ '$FREIGHT', 2 ] } },
-                    overhead: { $sum: { $round: [ '$OVERHEAD', 2 ] } },
-                    commissions: { $sum: { $round: [ '$COMMISSIONS', 2 ] } },
+                    // freight: { $sum: { $round: [ '$FREIGHT', 2 ] } },
+                    // overhead: { $sum: { $round: [ '$OVERHEAD', 2 ] } },
+                    // commissions: { $sum: { $round: [ '$COMMISSIONS', 2 ] } },
 				}
 			}
 		];
@@ -96,9 +96,9 @@ exports.Aggregations = (start, end, item, cust) => {
 					costs: { $sum: { $round: [ '$COST', 2 ] } },
 					rebates: { $sum: { $round: [ { $multiply: [ '$REBATECREDIT', -1 ] }, 2 ] } },
                     // tradefees: { $sum: { $round: [ '$TRADEFEES', 2 ] } },
-                    freight: { $sum: { $round: [ '$FREIGHT', 2 ] } },
-                    overhead: { $sum: { $round: [ '$OVERHEAD', 2 ] } },
-                    commissions: { $sum: { $round: [ '$COMMISSIONS', 2 ] } },
+                    // freight: { $sum: { $round: [ '$FREIGHT', 2 ] } },
+                    // overhead: { $sum: { $round: [ '$OVERHEAD', 2 ] } },
+                    // commissions: { $sum: { $round: [ '$COMMISSIONS', 2 ] } },
 				}
 			}
 		];
@@ -106,6 +106,41 @@ exports.Aggregations = (start, end, item, cust) => {
 
 	return aggregation;
 };
+
+exports.calcFrOhCom = function(freightFactor, overheadFactor) {
+	let frOhCom;
+	let ff = freightFactor;
+	let ohf = overheadFactor;
+
+	if (!ff) ff = 2
+	if (!ohf) ohf = 1
+
+	return {
+		$addFields: {
+			freight: {
+				$cond: {
+					if: { $in: [ '$_id.cid', [ "8497" ] ] },
+					then: 0,
+					else: { $multiply: [ '$quantity', ff ] }
+				}
+			},
+			overhead: {
+				$cond: {
+					if: { $in: [ '$_id.cid', [ "8497" ] ] },
+					then: 0,
+					else: { $multiply: [ '$quantity', ohf ] }
+				}
+			},
+			commissions: {
+				$cond: {
+					if: { $in: [ '$_id.cid', [ "8497" ] ] },
+					then: 0,
+					else: { $round: [ { $multiply: [ '$sales', .02 ] }, 2 ] },
+				}
+			},
+		}
+	}
+} 
 
 exports.tradefees = {
     $addFields: {
@@ -115,11 +150,101 @@ exports.tradefees = {
                 then: { $switch: {
                     branches: [
                         { 
-                            case: [ "$_id.cid", 8497 ],
+                            case: { $eq: [ "$_id.cid", "1300" ] },
                             then: {
-                                $round: [ { $multiply: [ "$sales", 0 ] }, 2 ]
+                                $round: [ { $multiply: [ "$sales", 0.075 ] }, 2 ]
                             }
-                        }
+                        },
+                        { 
+                            case: { $eq: [ "$_id.cid", "1200" ] },
+                            then: {
+                                $round: [ { $multiply: [ "$sales", 0.020 ] }, 2 ]
+                            }
+                        },
+                        { 
+                            case: { $eq: [ "$_id.cid", "2250" ] },
+                            then: {
+                                $round: [ { $multiply: [ "$sales", 0.020 ] }, 2 ]
+                            }
+                        },
+                        { 
+                            case: { $eq: [ "$_id.cid", "2772" ] },
+                            then: {
+                                $round: [ { $multiply: [ "$sales", 0.020 ] }, 2 ]
+                            }
+                        },
+                        { 
+                            case: { $eq: [ "$_id.cid", "8497" ] },
+                            then: {
+                                $round: [ { $multiply: [ "$sales", 0.020 ] }, 2 ]
+                            }
+                        },
+                        { 
+                            case: { $eq: [ "$_id.cid", "2091" ] },
+                            then: {
+                                $round: [ { $multiply: [ "$sales", 0.030 ] }, 2 ]
+                            }
+                        },
+                        { 
+                            case: { $eq: [ "$_id.cid", "1716" ] },
+                            then: {
+                                $round: [ { $multiply: [ "$sales", 0.050 ] }, 2 ]
+                            }
+                        },
+                        { 
+                            case: { $eq: [ "$_id.cid", "1719" ] },
+                            then: {
+                                $round: [ { $multiply: [ "$sales", 0.020 ] }, 2 ]
+                            }
+                        },
+                        { 
+                            case: { $eq: [ "$_id.cid", "9988" ] },
+                            then: {
+                                $round: [ { $multiply: [ "$sales", 0.100 ] }, 2 ]
+                            }
+                        },
+                        { 
+                            case: { $eq: [ "$_id.cid", "1402" ] },
+                            then: {
+                                $round: [ { $multiply: [ "$sales", 0.070 ] }, 2 ]
+                            }
+                        },
+                        { 
+                            case: { $eq: [ "$_id.cid", "1404" ] },
+                            then: {
+                                $round: [ { $multiply: [ "$sales", 0.070 ] }, 2 ]
+                            }
+                        },
+                        { 
+                            case: { $eq: [ "$_id.cid", "2084" ] },
+                            then: {
+                                $round: [ { $multiply: [ "$sales", 0.04308 ] }, 2 ]
+                            }
+                        },
+                        { 
+                            case: { $eq: [ "$_id.cid", "2614" ] },
+                            then: {
+                                $round: [ { $multiply: [ "$sales", 0.010 ] }, 2 ]
+                            }
+                        },
+                        { 
+                            case: { $eq: [ "$_id.cid", "5214" ] },
+                            then: {
+                                $round: [ { $multiply: [ "$sales", 0.020 ] }, 2 ]
+                            }
+                        },
+                        { 
+                            case: { $eq: [ "$_id.cid", "1070" ] },
+                            then: {
+                                $round: [ { $multiply: [ "$sales", 0.010 ] }, 2 ]
+                            }
+						},
+						{
+							case: { $regexMatch: { input: "$_id.customer", regex: "IMCO" } },
+							then: {
+								$round: [ { $multiply: [ "$sales", 0.010 ] }, 2 ]
+							}
+						}
                     ],
                     default: 0
                 }},

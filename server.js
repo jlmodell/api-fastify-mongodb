@@ -1,10 +1,9 @@
 require('dotenv/config')
 const fastify = require("fastify")({ logger: true })
 const mongoose = require("mongoose")
-const routes = require('./routes/index')
 
 fastify.register(require('fastify-cors'), { 
-    origin: false
+    origin: "*"
   })
 
 fastify.register(require('fastify-jwt'), {
@@ -31,7 +30,3 @@ try {
         process.exit(1)
     }
 })()
-
-// routes.forEach((route, _index) => {
-//     fastify.route(route)
-// })
