@@ -12,10 +12,10 @@ exports.DEFAULT_AGG = (start, end, item, cust) => {
 			{
 				$group: {
 					_id: {
-						// customer: '$CNAME',
-						// cid: '$CUST'
-						item: '$INAME',
-						iid: '$ITEM'
+						customer: '$CNAME',
+						cid: '$CUST'
+						// item: '$INAME',
+						// iid: '$ITEM'
 					},
 					quantity: { $sum: '$QTY' },
 					sales: { $sum: { $round: [ '$SALE', 2 ] } },
@@ -313,7 +313,7 @@ exports.AVG_DISCOUNTED_PRICE = {
 	$addFields: {
 		avgSalePriceAfterDiscounts: {
 			$cond: {
-				if: { $gt: [ { $subtract: [ '$sales', { $add: ['$rebates','$tradefees','$commissions','$freight','$overhead']} ] }, 0 ] },
+				if: { $gt: [ { $subtract: [ '$sales', { $add: ['$rebates','$tradefees','$commissions','$freight','$overhead']} ] }, 0 ], $gt: [ '$quantity', 0 ] },
 				then: {
 					$round: [
 						{
