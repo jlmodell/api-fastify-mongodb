@@ -12,8 +12,10 @@ exports.DEFAULT_AGG = (start, end, item, cust) => {
 			{
 				$group: {
 					_id: {
-						customer: '$CNAME',
-						cid: '$CUST'
+						// customer: '$CNAME',
+						// cid: '$CUST'
+						item: '$INAME',
+						iid: '$ITEM'
 					},
 					quantity: { $sum: '$QTY' },
 					sales: { $sum: { $round: [ '$SALE', 2 ] } },
@@ -89,7 +91,8 @@ exports.DEFAULT_AGG = (start, end, item, cust) => {
 			{
 				$group: {
 					_id: {
-						sterility: "$STER",
+						item: '$INAME',
+						iid: '$ITEM'
 					},
 					quantity: { $sum: '$QTY' },
 					sales: { $sum: { $round: [ '$SALE', 2 ] } },
