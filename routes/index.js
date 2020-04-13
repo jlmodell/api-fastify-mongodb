@@ -1,6 +1,11 @@
 const salesController = require('../controllers/sales.controller')
 
 async function Router(fastify) {
+    /**
+     * route => /api/sales
+     */
+    fastify.get('/api/sales', { preValidation: [fastify.auth], handler: salesController.getSalesByPeriod})
+
     /*
         route => /api/sale/q_s_pd
         test =>

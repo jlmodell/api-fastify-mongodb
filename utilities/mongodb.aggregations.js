@@ -87,13 +87,13 @@ exports.DEFAULT_AGG = (start, end, item, cust) => {
 				$match: {
 					DATE: { $gte: new Date(start), $lte: new Date(end) },
 				}
-			},
+			},			
 			{
 				$group: {
 					_id: {
 						item: '$INAME',
-						iid: '$ITEM'
-					},
+						iid: '$ITEM',						
+					},					
 					quantity: { $sum: '$QTY' },
 					sales: { $sum: { $round: [ '$SALE', 2 ] } },
 					costs: { $sum: { $round: [ '$COST', 2 ] } },
@@ -103,12 +103,35 @@ exports.DEFAULT_AGG = (start, end, item, cust) => {
                     // overhead: { $sum: { $round: [ '$OVERHEAD', 2 ] } },
                     // commissions: { $sum: { $round: [ '$COMMISSIONS', 2 ] } },
 				}
-			}
+			}			
 		];
     }
 
 	return aggregation;
 };
+
+exports.TRADEFEES_AGG_FOR_REDUCER = function(start, end) {
+	let aggregation = [
+		{
+			$match: {
+				DATE: { $gte: new Date(start), $lte: new Date(end) },
+			}
+		},			
+		{
+			$group: {
+				_id: {
+					item: '$INAME',
+					iid: '$ITEM',
+					customer: '$CNAME',
+					cid: '$CUST'		
+				},									
+				sales: { $sum: { $round: [ '$SALE', 2 ] } },				
+			}
+		}			
+	]
+
+	return aggregation
+}
 
 exports.CALC_FR_OH_COMM = function(freightFactor, overheadFactor) {	
 	let ff = freightFactor;
