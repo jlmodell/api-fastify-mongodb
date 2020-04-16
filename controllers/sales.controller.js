@@ -1,47 +1,22 @@
 const Sales = require('../models/sales.model')
+const helper = require("./helpers/processing")
 const {DEFAULT_AGG, TRADEFEES_AGG_FOR_REDUCER, CALC_FR_OH_COMM, TRADEFEES, GP, GPM, AVG_SALE_PRICE, AVG_DISCOUNTED_PRICE, SALES_BY_QUANT_AGGREGATION} = require('../utilities/mongodb.aggregations')
 // const boom = require('boom')
-
 
 exports.getSalesForPeriodByItem_ = async (req, reply) => {
     var {start, end, ff, ohf} = req.query
     if (!ff) ff = 2
-    if (!ohf) ohf = 1
+    if (!ohf) ohf = 1    
 
     const sales = await Sales.find({
         DATE: { $gte: new Date(start), $lte: new Date(end)}
-    })
-
-    const processing =  sales.reduce((r, cur) => {
-        var temp = r.find((o) => cur.ITEM === o._id.iid && cur.CUST === o._id.cid);
-
-        if (!temp) {
-            r.push(temp = { 
-                _id: {iid: cur.ITEM, item: cur.INAME, cid: cur.CUST, customer: cur.CNAME}, 
-                quantity: 0, 
-                sales: 0, 
-                costs: 0, 
-                rebates: 0,
-                tradefees: 0,
-                freight: 0,
-                overhead: 0,
-                grossProfit: 0,
-            })
-        }
-
-        temp.quantity += cur.QTY
-        temp.sales += cur.SALE
-        temp.costs += cur.COST
-        temp.rebates += cur.REBATECREDIT
-        temp.freight += cur.QTY * parseInt(ff)
-        temp.overhead += cur.QTY * parseInt(ohf)        
-
-        return r
-    },[])
+    }).sort({DATE: -1}).lean().exec()
+    
+    const data = helper.Processor(ff, ohf, sales)    
 
     reply
         .code(201)
-        .send({data: processing})
+        .send({data})
 }
 
 exports.getSalesByPeriod = async (req, reply) => {
