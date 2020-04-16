@@ -8,7 +8,7 @@ async function Login(fastify) {
         route =>
             /login
         test =>
-            curl -d "{\"email\":\"modell.jeff@me.com\", \"password\":\"secret\"}" -H "Content-Type: application/json" "http://localhost:9090/login"
+            curl -d "{\"email\":\"modell.jeff@me.com\", \"password\":\""}" -H "Content-Type: application/json" "http://localhost:9090/login"
         response =>
             {
                 "token":

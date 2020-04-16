@@ -4,7 +4,7 @@ async function Router(fastify) {
     /**
      * route => /api/sales
      */
-    fastify.get('/api/sales', { preValidation: [fastify.auth], handler: salesController.getSalesByPeriod})
+    fastify.get('/api/sales/item_', { preValidation: [fastify.auth], handler: salesController.getSalesForPeriodByItem_})
 
     /*
         route => /api/sale/q_s_pd
