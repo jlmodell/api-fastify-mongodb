@@ -96,8 +96,8 @@ aggregations = [
 db.sales.aggregate([
     {
         $match: {
-            DATE: {$gte: new Date("2018-04-16"), $lte: new Date("2020-04-15")},
-            ITEM: "723"
+            DATE: {$gte: new Date("2020-04-02"), $lte: new Date("2020-04-02")},
+            ITEM: "911"
         }
     },
     {
@@ -106,7 +106,11 @@ db.sales.aggregate([
             qty: {$sum: "$QTY"},
             sale: {$sum: "$SALE"},
             cost: {$sum: "$COST"},
-            rebate: {$sum: "$REBATECREDIT"},
+            freight: {$sum: "$FREIGHT"},
+            overhead: {$sum: "$OVERHEAD"},
+            commission: {$sum: "$COMMISSION"},
+            tradefee: {$sum: "$TRADEFEE"},
+            rebate: {$sum: "$REBATECREDIT"},            
         }
     }
 ])

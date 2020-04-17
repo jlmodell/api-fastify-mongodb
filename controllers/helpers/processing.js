@@ -241,14 +241,17 @@ const build_map = (ff, ohf, data) => {
                 tradefees: 0,
                 tradefees_details: [],
                 freight: 0,
+                freight_details: [],
                 overhead: 0,
+                overhead_details: [],
                 commissions: 0,
+                commissions_details: [],
                 rebates: 0,
                 rebate_details: []
             })
         }
 
-        const tff = helper.tradefees(doc) * doc.SALE
+        // const tff = helper.tradefees(doc) * doc.SALE
 
         temp = map.get(doc.ITEM)
                         
@@ -258,7 +261,10 @@ const build_map = (ff, ohf, data) => {
         temp.quantity_details.push(doc.QTY)
         temp.sales_details.push(doc.SALE)
         temp.costs_details.push(doc.COST)
-        temp.tradefees_details.push(tff);
+        temp.tradefees_details.push(doc.TRADEFEE);
+        temp.freight_details.push(doc.FREIGHT)
+        temp.overhead_details.push(doc.OVERHEAD)
+        temp.commissions_details.push(doc.COMMISSION)
             
         map.set(doc.ITEM, {            
             customers_id: temp.customers_id,            
@@ -271,11 +277,14 @@ const build_map = (ff, ohf, data) => {
             sales_details: temp.sales_details,
             costs: temp.costs + doc.COST,
             costs_details: temp.costs_details,
-            tradefees: temp.tradefees + tff,
+            tradefees: temp.tradefees + doc.TRADEFEE,
             tradefees_details: temp.tradefees_details,
-            freight: temp.freight + (doc.QTY * ff),
-            overhead: temp.overhead + (doc.QTY * ohf),
-            commissions: temp.commissions + (doc.SALE * 0.02),
+            freight: temp.freight + doc.FREIGHT,
+            freight_details: temp.freight_details,
+            overhead: temp.overhead + doc.OVERHEAD,
+            overhead_details: temp.overhead_details,
+            commissions: temp.commissions + doc.COMMISSION,
+            commissions_details: temp.commissions_details,
             rebates: temp.rebates + doc.REBATECREDIT,
             rebate_details: temp.rebate_details
         })
@@ -286,7 +295,7 @@ const build_map = (ff, ohf, data) => {
 }
 
 exports.MAP_PROCESSOR = (ff, ohf, data) => {
-    const map = build_map(ff, ohf, data)
+    const map = build_map(ff, ohf, data)    
 
     return Array.from(map.values()).map(res => {
         const { quantity, sales, costs, tradefees, freight, overhead, commissions, rebates } = res
@@ -312,9 +321,9 @@ exports.MAP_PROCESSOR = (ff, ohf, data) => {
             temp.sales += res.sales_details[ind]
             temp.costs += res.costs_details[ind]
             temp.tradefees += res.tradefees_details[ind]
-            temp.freight += res.quantity_details[ind] * ff
-            temp.overhead += res.quantity_details[ind] * ohf
-            temp.commissions += res.sales_details[ind] * 0.02
+            temp.freight += res.freight_details[ind]
+            temp.overhead += res.overhead_details[ind]
+            temp.commissions += res.commissions_details[ind]
             temp.rebates += -res.rebate_details[ind]
 
             return arr                      
