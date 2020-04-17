@@ -147,7 +147,7 @@ const build_hashmap = (ff, ohf, data) => {
                         costs: temp.costs + doc.COST,
                         costs_details: temp.costs_details,
                         tradefees: temp.tradefees + tf,
-                        tradefees_details: temp.tradefee_details,
+                        tradefees_details: temp.tradefees_details,
                         freight: temp.freight + (doc.QTY * ff),
                         overhead: temp.overhead + (doc.QTY * ohf),
                         commissions: temp.commissions + (doc.SALE * 0.02),
@@ -168,7 +168,7 @@ exports.HASHMAP_PROCESSOR = async (ff, ohf, data) => {
     
     try {
         const map = await build_hashmap(ff, ohf, data)
-        console.log(map)
+        // console.log(map)
 
         return Array.from(map.values()).map(res => {
             const { quantity, sales, costs, tradefees, freight, overhead, commissions, rebates } = res
@@ -222,3 +222,115 @@ exports.HASHMAP_PROCESSOR = async (ff, ohf, data) => {
 
 }
 
+const build_map = (ff, ohf, data) => {
+    const map = new Map()
+
+    data.forEach((doc) => {
+        if (!map.has(doc.ITEM)) {
+            map.set(doc.ITEM, {
+                customers_id: [],
+                customers_name: [],
+                item_desc: doc.INAME,
+                item_id: doc.ITEM,
+                quantity: 0,
+                quantity_details: [],                
+                sales: 0,
+                sales_details: [],
+                costs: 0,
+                costs_details: [],
+                tradefees: 0,
+                tradefees_details: [],
+                freight: 0,
+                overhead: 0,
+                commissions: 0,
+                rebates: 0,
+                rebate_details: []
+            })
+        }
+
+        const tff = helper.tradefees(doc) * doc.SALE
+
+        temp = map.get(doc.ITEM)
+                        
+        temp.customers_id.push(doc.CUST)
+        temp.customers_name.push(doc.CNAME)
+        temp.rebate_details.push(doc.REBATECREDIT)
+        temp.quantity_details.push(doc.QTY)
+        temp.sales_details.push(doc.SALE)
+        temp.costs_details.push(doc.COST)
+        temp.tradefees_details.push(tff);
+            
+        map.set(doc.ITEM, {            
+            customers_id: temp.customers_id,            
+            customers_name: temp.customers_name,
+            item_desc: temp.item_desc,
+            item_id: temp.item_id,
+            quantity: temp.quantity + doc.QTY,
+            quantity_details: temp.quantity_details,
+            sales: temp.sales + doc.SALE,
+            sales_details: temp.sales_details,
+            costs: temp.costs + doc.COST,
+            costs_details: temp.costs_details,
+            tradefees: temp.tradefees + tff,
+            tradefees_details: temp.tradefees_details,
+            freight: temp.freight + (doc.QTY * ff),
+            overhead: temp.overhead + (doc.QTY * ohf),
+            commissions: temp.commissions + (doc.SALE * 0.02),
+            rebates: temp.rebates + doc.REBATECREDIT,
+            rebate_details: temp.rebate_details
+        })
+    })
+
+    return map
+
+}
+
+exports.MAP_PROCESSOR = (ff, ohf, data) => {
+    const map = build_map(ff, ohf, data)
+
+    return Array.from(map.values()).map(res => {
+        const { quantity, sales, costs, tradefees, freight, overhead, commissions, rebates } = res
+
+        const customer_details = res.customers_id.reduce((arr, cur, ind) => {  
+            var temp = arr.find(r => cur === r._id.cid)
+
+            if (!temp) {
+                arr.push(temp = {
+                    _id: { cid: cur, customer: res.customers_name[ind] },
+                    quantity: 0,
+                    sales: 0,
+                    costs: 0,
+                    tradefees: 0,
+                    freight: 0,
+                    overhead: 0,
+                    commissions: 0,    
+                    rebates: 0
+                })
+            }
+
+            temp.quantity += res.quantity_details[ind]
+            temp.sales += res.sales_details[ind]
+            temp.costs += res.costs_details[ind]
+            temp.tradefees += res.tradefees_details[ind]
+            temp.freight += res.quantity_details[ind] * ff
+            temp.overhead += res.quantity_details[ind] * ohf
+            temp.commissions += res.sales_details[ind] * 0.02
+            temp.rebates += -res.rebate_details[ind]
+
+            return arr                      
+        },[])
+
+        return {
+            _id: { iid: res.item_id, item: res.item_desc },
+            quantity,
+            sales,
+            costs,
+            tradefees,
+            freight,
+            overhead,
+            commissions,
+            rebates: -rebates,
+            customer_details                
+        }
+    }).sort((a,b) => b.sales - a.sales)   
+}

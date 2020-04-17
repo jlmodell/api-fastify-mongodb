@@ -241,7 +241,7 @@ exports.getSalesForPeriodByItem_ = async (req, reply) => {
     
     // const data = helper.Processor(ff, ohf, sales)
     
-    const data = helper.HASHMAP_PROCESSOR(ff, ohf, sample_data)
+	const data = helper.MAP_PROCESSOR(ff, ohf, sales)	
 
     reply
         .code(201)
