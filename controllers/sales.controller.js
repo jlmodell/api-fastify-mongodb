@@ -231,16 +231,32 @@ const sample_data = [
 ];
 
 exports.getSalesForPeriodByItem_ = async (req, reply) => {
-    var {start, end, ff, ohf} = req.query
+    var {start, end, ff, ohf, item, cust} = req.query
     if (!ff) ff = 2
-    if (!ohf) ohf = 1    
+	if (!ohf) ohf = 1    
+	
+	const find_object = (start, end, item, cust) => {
+		if (!item && cust) {
+			return {
+				DATE: { $gte: new Date(start), $lte: new Date(end)}, CUST: {$in: cust.split(",")}
+			}
+		} else if (item && !cust) {
+			return {
+				DATE: { $gte: new Date(start), $lte: new Date(end)}, ITEM: {$in: item.split(",")}
+			}
+		} else if (item && cust) {
+			return {
+				DATE: { $gte: new Date(start), $lte: new Date(end)}, ITEM: {$in: item.split(",")}, CUST: {$in: cust.split(",")}
+			}
+		} else {
+			return {
+				DATE: { $gte: new Date(start), $lte: new Date(end)}
+			}
+		}
+	}
 
-    const sales = await Sales.find({
-        DATE: { $gte: new Date(start), $lte: new Date(end)}
-    }).lean().exec()
-    
-    // const data = helper.Processor(ff, ohf, sales)
-    
+    const sales = await Sales.find(find_object(start,end,item,cust)).lean().exec()
+        
 	const data = helper.MAP_PROCESSOR(ff, ohf, sales)	
 
     reply

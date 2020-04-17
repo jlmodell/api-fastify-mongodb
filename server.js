@@ -15,7 +15,7 @@ fastify.register(require('./routes/user.auth.route'))
 fastify.register(require('./routes/index'))
 
 try {
-    mongoose.connect(process.env.MONGODB_LOCAL, { useNewUrlParser: true, useUnifiedTopology: true })
+    mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
         .then(() => console.log('MongoDB Connected Successfully.'))
 } catch(err) {
     console.log(err)    
