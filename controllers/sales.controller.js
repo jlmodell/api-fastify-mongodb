@@ -264,6 +264,39 @@ exports.getSalesForPeriodByItem_ = async (req, reply) => {
         .send({data: data})
 }
 
+/**
+ * TODO: optimize by processing on server instead of via mongodb aggregation
+ */
+exports.getQtySoldPerDay = async (req, reply) => {
+    const start = req.query.start
+    const end = req.query.end
+    const item = req.query.item
+
+    const [match, group] = SALES_BY_QUANT_AGGREGATION(start, end, item)
+
+    const sales = await Sales.aggregate([
+        match,
+        group,
+        { $sort: {
+            _id: 1
+        }}   
+    ])
+
+    reply.code(201).send({ data: sales })
+}
+
+/**
+ * 
+ * RETIRED ENDPOINT
+ * 
+ * original implementation is scrapped in favor of reducing db processing to minimal
+ * and instead processing data on the rest api instead.
+ * 
+ * gains in speed were tremendous.
+ * 
+ * additional changes were preprocessing various variables that were being acted upon
+ * eg) instead of basing freight/overhead on quantity, it is applied directly to mongodb
+ */
 exports.getSalesByPeriod = async (req, reply) => {
     const start = req.query.start
     const end = req.query.end
@@ -328,6 +361,12 @@ exports.getSalesByPeriod = async (req, reply) => {
 
 }
 
+
+
+
+/**
+ * RETIRED ENDPOINT - maintain for personal growth
+ */
 exports.getSalesForPeriodByItem = async (req, reply) => {
     const start = req.query.start
     const end = req.query.end
@@ -399,6 +438,9 @@ exports.getSalesForPeriodByItem = async (req, reply) => {
     
 }
 
+/**
+ * RETIRED ENDPOINT - maintain for personal growth
+ */
 exports.getSalesForPeriodByCust = async (req, reply) => {
     const start = req.query.start
     const end = req.query.end
@@ -424,20 +466,3 @@ exports.getSalesForPeriodByCust = async (req, reply) => {
     reply.code(201).send({ data: sales })
 }
 
-exports.getQtySoldPerDay = async (req, reply) => {
-    const start = req.query.start
-    const end = req.query.end
-    const item = req.query.item
-
-    const [match, group] = SALES_BY_QUANT_AGGREGATION(start, end, item)
-
-    const sales = await Sales.aggregate([
-        match,
-        group,
-        { $sort: {
-            _id: 1
-        }}   
-    ])
-
-    reply.code(201).send({ data: sales })
-}
