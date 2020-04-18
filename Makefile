@@ -1,17 +1,13 @@
-run: 
-	npm run start
+all: stop build run
 
-testing:
-	npm run test
+build:
+	docker build -t "busseapi9090" .
 
-docker_build:
-	docker build -t "busse-api-v3-9090" .
+run:
+	docker run -d --name "busseapi90900" --env-file "docker.env" --restart "always" -p 9090:9090 busseapi9090
 
-docker_run:
-	docker run -d --name "busse-api-v3-9090" --env-file "docker.env" --restart "always" -p 9090:9090 busse-api-v3-9090
-
-docker_remove:
-	docker stop busse-api-v3-9090 && docker rm busse-api-v3-9090 && docker image rm -f busse-api-v3-9090
+stop:
+	docker stop busseapi9090 && docker rm busseapi9090 && docker image rm -f busseapi9090
 
 git:
 	git commit -m "updates" && git push
