@@ -1,14 +1,13 @@
 require('dotenv/config')
-const fs = require('fs')
-const fastify = require("fastify")({
-    logger: true, 
-    https: {
-        key: fs.readFileSync('/etc/letsencrypt/live/busseweb.com/privkey.pem'),
-        cert: fs.readFileSync('/etc/letsencrypt/live/busseweb.com/cert.pem'),
-        ca: fs.readFileSync('/etc/letsencrypt/live/busseweb.com/chain.pem')
-    } 
-})
+const fastify = require("fastify")({ logger: true, https: true })
 const mongoose = require("mongoose")
+
+fastify.register(require('fastify-tls-keygen'), {
+    // Optional (default: ./key.pem)
+    // key: '/path/to/save/private/key.pem',
+    // Optional (default: ./cert.pem)
+    // cert: '/path/to/save/public/certificate.pem'
+  })
 
 fastify.register(require('fastify-cors'), { 
     origin: "*"
