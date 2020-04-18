@@ -5,9 +5,12 @@ const fastify = require("fastify")({
     logger: true, 
     https: {
         // ../../../etc/letsencrypt/live/busseweb.com/
-        key: fs.readFileSync(path.join(__dirname, "..", "..", "..", "etc", "letsencrypt", "live", "busseweb.com", "privkey.pem")),
-        cert: fs.readFileSync(path.join(__dirname, "..", "..", "..", "etc", "letsencrypt", "live", "busseweb.com", "cert.pem")),
-        ca: fs.readFileSync(path.join(__dirname, "..", "..", "..", "etc", "letsencrypt", "live", "busseweb.com", "chain.pem"))
+	key: fs.readFileSync(path.join(__dirname, "..", "etc", "letsencrypt", "live", "busseweb.com", "privkey.pem")),
+        cert: fs.readFileSync(path.join(__dirname, "..", "etc", "letsencrypt", "live", "busseweb.com", "cert.pem")),
+        ca: fs.readFileSync(path.join(__dirname, "..", "etc", "letsencrypt", "live", "busseweb.com", "chain.pem"))
+//        key: fs.readFileSync("/etc/letsencrypt/live/busseweb.com/privkey.pem"),
+  //      cert: fs.readFileSync("/etc/letsencrypt/live/busseweb.com/cert.pem"),
+    //    ca: fs.readFileSync("/etc/letsencrypt/live/busseweb.com/chain.pem")
     } 
 })
 const mongoose = require("mongoose")
