@@ -88,7 +88,7 @@ exports.Processor = (ff, ohf, data) => {
 }
 
 /**
- * Reimplementation of data processing using a MAP instead of array methods.
+ * Reimplementation of Processor using a MAP instead of array methods.
  * using a map significantly cuts down on processing from o(n) to o(1) in terms of
  * traversing the array to find a match vs retrieving from the map.
  */
@@ -124,7 +124,7 @@ const build_map = (ff, ohf, data) => {
 
         // const tff = helper.tradefees(doc) * doc.SALE
 
-        temp = map.get(doc.ITEM)
+        var temp = map.get(doc.ITEM)
                         
         temp.customers_id.push(doc.CUST)
         temp.customers_name.push(doc.CNAME)
@@ -213,4 +213,46 @@ exports.MAP_PROCESSOR = (ff, ohf, data) => {
             customer_details                
         }
     }).sort((a,b) => b.sales - a.sales)   
+}
+
+exports.process_qty_into_months = (data) => {
+    const map = new Map()
+
+    data.forEach(doc => {
+        if (!map.has(new Date(doc.DATE).getMonth())) {
+            map.set(new Date(doc.DATE).getMonth(), {
+                month: new Date(doc.DATE).getMonth(),
+                quantity: 0
+            })
+        }
+        var temp = map.get(new Date(doc.DATE).getMonth())
+
+        map.set(new Date(doc.DATE).getMonth(), {
+            month: temp.month,
+            quantity: temp.quantity + doc.QTY
+        })
+    })
+
+    return Array.from(map.values()).map(({month, quantity}) => {
+        const monthObj = {
+            0:"January",
+            1:"February",
+            2:"March",
+            3:"April",
+            4:"May",
+            5:"June",
+            6:"July",
+            7:"August",
+            8:"September",
+            9:"October",
+            10:"November",
+            11:"December"
+        }
+
+        return {
+            m: month,
+            month: monthObj[month],
+            quantity
+        }
+    }).sort((a,b) => a.m - b.m)
 }

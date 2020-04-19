@@ -29,6 +29,7 @@ async function Router(fastify) {
      * 
      */
     fastify.get('/api/sale/q_s_pd', { preValidation: [fastify.auth], handler: salesController.getQtySoldPerDay})
+    fastify.get('/api/sales/summary_', { preValidation: [fastify.auth], handler: salesController.getQtySoldPerMonth})
 
     /**
      * TODO: optimize

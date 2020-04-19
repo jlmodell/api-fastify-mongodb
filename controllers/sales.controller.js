@@ -265,12 +265,29 @@ exports.getSalesForPeriodByItem_ = async (req, reply) => {
 }
 
 /**
+ * TODO: make optimizations
+ */
+exports.getQtySoldPerMonth = async (req, reply) => {
+	const { start, end, item } = req.query
+
+	const sales = await Sales.find({
+		DATE: { $gte: new Date(start), $lte: new Date(end)}, ITEM: {$in: item.split(",")}
+	})
+
+	const response = helper.process_qty_into_months(sales)
+
+	reply
+		.code(201)
+		.send(response)
+}
+
+/**
  * TODO: optimize by processing on server instead of via mongodb aggregation
  */
 exports.getQtySoldPerDay = async (req, reply) => {
     const start = req.query.start
     const end = req.query.end
-    const item = req.query.item
+	const item = req.query.item
 
     const [match, group] = SALES_BY_QUANT_AGGREGATION(start, end, item)
 
