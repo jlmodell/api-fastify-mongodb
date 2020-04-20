@@ -6,8 +6,8 @@ The database is housed in a mongodb.
 
 Queries:
 
-  /api/sales/item_ => searches a {time range} for sales data about {item}
-    required params are "start", "end" in YYYY-MM-DD format & "item"
+  `/api/sales/item_ => searches a {time range} for sales data about {item}
+    required params are "start", "end" in YYYY-MM-DD format & "item"`
   
   JSON Response of "data" including an array of items which is an object with various data.
   
