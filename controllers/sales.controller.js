@@ -236,6 +236,15 @@ exports.getSalesForPeriodByItem_ = async (req, reply) => {
 	if (!ohf) ohf = 1    
 	
 	const find_object = (start, end, item, cust) => {
+		if (cust && cust.startsWith("^")) {
+			
+			let temp = cust.split("^")
+			console.log(temp[1])
+			var reg = new RegExp(`${temp[1]}`,"i")
+			return {				
+				DATE: { $gte: new Date(start), $lte: new Date(end)}, CNAME: reg
+			}
+		}
 		if (!item && cust) {
 			return {
 				DATE: { $gte: new Date(start), $lte: new Date(end)}, CUST: {$in: cust.split(",")}
