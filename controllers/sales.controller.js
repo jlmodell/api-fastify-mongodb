@@ -1,6 +1,16 @@
-const Sales = require('../models/sales.model')
-const helper = require("./helpers/processing")
-const {DEFAULT_AGG, TRADEFEES_AGG_FOR_REDUCER, CALC_FR_OH_COMM, TRADEFEES, GP, GPM, AVG_SALE_PRICE, AVG_DISCOUNTED_PRICE, SALES_BY_QUANT_AGGREGATION} = require('../utilities/mongodb.aggregations')
+const Sales = require('../models/sales.model');
+const helper = require('./helpers/processing');
+const {
+	DEFAULT_AGG,
+	TRADEFEES_AGG_FOR_REDUCER,
+	CALC_FR_OH_COMM,
+	TRADEFEES,
+	GP,
+	GPM,
+	AVG_SALE_PRICE,
+	AVG_DISCOUNTED_PRICE,
+	SALES_BY_QUANT_AGGREGATION
+} = require('../utilities/mongodb.aggregations');
 // const boom = require('boom')
 
 const sample_data = [
@@ -230,86 +240,73 @@ const sample_data = [
 	}
 ];
 
-exports.getSalesForPeriodByItem_ = async (req, reply) => {
-    var {start, end, ff, ohf, item, cust} = req.query
-    if (!ff) ff = 2
-	if (!ohf) ohf = 1    
-	
-	const find_object = (start, end, item, cust) => {
-		if (cust && cust.startsWith("^")) {
-			
-			let temp = cust.split("^")
-			console.log(temp[1])
-			var reg = new RegExp(`${temp[1]}`,"i")
-			return {				
-				DATE: { $gte: new Date(start), $lte: new Date(end)}, CNAME: reg
-			}
-		}
-		if (!item && cust) {
-			return {
-				DATE: { $gte: new Date(start), $lte: new Date(end)}, CUST: {$in: cust.split(",")}
-			}
-		} else if (item && !cust) {
-			return {
-				DATE: { $gte: new Date(start), $lte: new Date(end)}, ITEM: {$in: item.split(",")}
-			}
-		} else if (item && cust) {
-			return {
-				DATE: { $gte: new Date(start), $lte: new Date(end)}, ITEM: {$in: item.split(",")}, CUST: {$in: cust.split(",")}
-			}
-		} else {
-			return {
-				DATE: { $gte: new Date(start), $lte: new Date(end)}
-			}
-		}
+exports.getSales_ = async (req, reply) => {
+	var { start, end, ff, ohf, item, cust } = req.query;
+	if (!ff) ff = 2;
+	if (!ohf) ohf = 1;
+
+	const base_query = {};
+
+	base_query.DATE = { $gte: new Date(start), $lte: new Date(end) };
+
+	if (item) {
+		base_query.ITEM = { $in: item.split(',') };
 	}
 
-    const sales = await Sales.find(find_object(start,end,item,cust)).lean().exec()
-        
-	const data = helper.MAP_PROCESSOR(ff, ohf, sales)	
+	if (cust && cust.startsWith('^')) {
+		let temp = cust.split('^');
+		var reg = new RegExp(`${temp[1]}`, 'i');
 
-    reply
-        .code(201)
-        .send({data: data})
-}
+		base_query.CNAME = reg;
+	} else if (cust) {
+		base_query.CUST = { $in: cust.split(',') };
+	}
+
+	const sales = await Sales.find(base_query).lean().exec();
+
+	const data = helper.MAP_PROCESSOR(ff, ohf, sales);
+
+	reply.code(201).send({ data: data });
+};
 
 /**
  * TODO: make optimizations
  */
 exports.getQtySoldPerMonth = async (req, reply) => {
-	const { start, end, item } = req.query
+	const { start, end, item } = req.query;
 
 	const sales = await Sales.find({
-		DATE: { $gte: new Date(start), $lte: new Date(end)}, ITEM: {$in: item.split(",")}
-	})
+		DATE: { $gte: new Date(start), $lte: new Date(end) },
+		ITEM: { $in: item.split(',') }
+	});
 
-	const response = helper.process_qty_into_months(sales)
+	const response = helper.process_qty_into_months(sales);
 
-	reply
-		.code(201)
-		.send(response)
-}
+	reply.code(201).send(response);
+};
 
 /**
  * TODO: optimize by processing on server instead of via mongodb aggregation
  */
 exports.getQtySoldPerDay = async (req, reply) => {
-    const start = req.query.start
-    const end = req.query.end
-	const item = req.query.item
+	const start = req.query.start;
+	const end = req.query.end;
+	const item = req.query.item;
 
-    const [match, group] = SALES_BY_QUANT_AGGREGATION(start, end, item)
+	const [ match, group ] = SALES_BY_QUANT_AGGREGATION(start, end, item);
 
-    const sales = await Sales.aggregate([
-        match,
-        group,
-        { $sort: {
-            _id: 1
-        }}   
-    ])
+	const sales = await Sales.aggregate([
+		match,
+		group,
+		{
+			$sort: {
+				_id: 1
+			}
+		}
+	]);
 
-    reply.code(201).send({ data: sales })
-}
+	reply.code(201).send({ data: sales });
+};
 
 /**
  * 
@@ -324,171 +321,205 @@ exports.getQtySoldPerDay = async (req, reply) => {
  * eg) instead of basing freight/overhead on quantity, it is applied directly to mongodb
  */
 exports.getSalesByPeriod = async (req, reply) => {
-    const start = req.query.start
-    const end = req.query.end
-    const freightFactor = parseFloat(req.query.ff)
-    const overheadFactor = parseFloat(req.query.ohf)
+	const start = req.query.start;
+	const end = req.query.end;
+	const freightFactor = parseFloat(req.query.ff);
+	const overheadFactor = parseFloat(req.query.ohf);
 
-    const [tf_match, tf_group] = TRADEFEES_AGG_FOR_REDUCER(start, end)
-    const [match, group] = DEFAULT_AGG(start, end, item=null, cust=null)  
-    const frOhCom = CALC_FR_OH_COMM(freightFactor, overheadFactor)
+	const [ tf_match, tf_group ] = TRADEFEES_AGG_FOR_REDUCER(start, end);
+	const [ match, group ] = DEFAULT_AGG(start, end, (item = null), (cust = null));
+	const frOhCom = CALC_FR_OH_COMM(freightFactor, overheadFactor);
 
-    const tf = await Sales.aggregate([
-        tf_match,
-        tf_group,
-        TRADEFEES,
-        {$unwind: '$sales'},
-        {$sort: {sales: -1}}
-    ])
+	const tf = await Sales.aggregate([
+		tf_match,
+		tf_group,
+		TRADEFEES,
+		{ $unwind: '$sales' },
+		{ $sort: { sales: -1 } }
+	]);
 
-    const tf_final = tf.map(function(x,_){
-        return { iid: x._id.iid, tradefees: x.tradefees}
-    })
-    .reduce((r, {iid, tradefees}) => {
-        var temp = r.find(o => iid === o.iid)
-        
-        if (!temp) {
-            r.push(temp = { iid, tradefees: 0})
-        }        
-        temp.tradefees += tradefees
-        
-        return r
-    },[])
+	const tf_final = tf
+		.map(function(x, _) {
+			return { iid: x._id.iid, tradefees: x.tradefees };
+		})
+		.reduce((r, { iid, tradefees }) => {
+			var temp = r.find((o) => iid === o.iid);
 
-    const sales = await Sales.aggregate([
-        match,
-        group,
-        frOhCom,
-        TRADEFEES,
-        GP,
-        GPM,
-        AVG_SALE_PRICE,
-        AVG_DISCOUNTED_PRICE,
-        {$unwind: '$sales'},
-        {$sort: {sales: -1}}
-    ])
+			if (!temp) {
+				r.push((temp = { iid, tradefees: 0 }));
+			}
+			temp.tradefees += tradefees;
 
-    const final_sales = sales.map(({_id, quantity, sales, costs, rebates, freight, overhead, commissions, avgSalePrice, grossProfit, grossProfitMargin}) => ({
-        _id, 
-        quantity,
-        sales,
-        costs,
-        rebates,
-        freight,
-        overhead,
-        commissions,
-        avgSalePrice,
-        tradefees: tf_final.filter(obj => obj.iid === _id.iid).map(obj => obj.tradefees)[0],
-        grossProfit: grossProfit - tf_final.filter(obj => obj.iid === _id.iid).map(obj => obj.tradefees)[0],
-        grossProfitMargin: ((grossProfit - tf_final.filter(obj => obj.iid === _id.iid).map(obj => obj.tradefees)[0]) / sales) * 100
-    }))
+			return r;
+		}, []);
 
-    reply.code(201).send({ data: final_sales })
+	const sales = await Sales.aggregate([
+		match,
+		group,
+		frOhCom,
+		TRADEFEES,
+		GP,
+		GPM,
+		AVG_SALE_PRICE,
+		AVG_DISCOUNTED_PRICE,
+		{ $unwind: '$sales' },
+		{ $sort: { sales: -1 } }
+	]);
 
-}
+	const final_sales = sales.map(
+		({
+			_id,
+			quantity,
+			sales,
+			costs,
+			rebates,
+			freight,
+			overhead,
+			commissions,
+			avgSalePrice,
+			grossProfit,
+			grossProfitMargin
+		}) => ({
+			_id,
+			quantity,
+			sales,
+			costs,
+			rebates,
+			freight,
+			overhead,
+			commissions,
+			avgSalePrice,
+			tradefees: tf_final.filter((obj) => obj.iid === _id.iid).map((obj) => obj.tradefees)[0],
+			grossProfit: grossProfit - tf_final.filter((obj) => obj.iid === _id.iid).map((obj) => obj.tradefees)[0],
+			grossProfitMargin:
+				(grossProfit - tf_final.filter((obj) => obj.iid === _id.iid).map((obj) => obj.tradefees)[0]) /
+				sales *
+				100
+		})
+	);
 
-
-
+	reply.code(201).send({ data: final_sales });
+};
 
 /**
  * RETIRED ENDPOINT - maintain for personal growth
  */
 exports.getSalesForPeriodByItem = async (req, reply) => {
-    const start = req.query.start
-    const end = req.query.end
-    const item = req.query.item
-    const freightFactor = parseFloat(req.query.ff)
-    const overheadFactor = parseFloat(req.query.ohf)
+	const start = req.query.start;
+	const end = req.query.end;
+	const item = req.query.item;
+	const freightFactor = parseFloat(req.query.ff);
+	const overheadFactor = parseFloat(req.query.ohf);
 
-    const [match, group] = DEFAULT_AGG(start, end, item, cust=null)    
-    const frOhCom = CALC_FR_OH_COMM(freightFactor, overheadFactor)
-    const [tf_match, tf_group] = TRADEFEES_AGG_FOR_REDUCER(start, end)
+	const [ match, group ] = DEFAULT_AGG(start, end, item, (cust = null));
+	const frOhCom = CALC_FR_OH_COMM(freightFactor, overheadFactor);
+	const [ tf_match, tf_group ] = TRADEFEES_AGG_FOR_REDUCER(start, end);
 
-    const tf = await Sales.aggregate([
-        tf_match,
-        tf_group,
-        TRADEFEES,
-        {$unwind: '$sales'},
-        {$sort: {sales: -1}}
-    ])
+	const tf = await Sales.aggregate([
+		tf_match,
+		tf_group,
+		TRADEFEES,
+		{ $unwind: '$sales' },
+		{ $sort: { sales: -1 } }
+	]);
 
-    const tf_final = tf.map(function(x,_){
-        return { iid: x._id.iid, tradefees: x.tradefees}
-    })
-    .reduce((r, {iid, tradefees}) => {
-        var temp = r.find(o => iid === o.iid)
-        
-        if (!temp) {
-            r.push(temp = { iid, tradefees: 0})
-        }        
-        temp.tradefees += tradefees
-        
-        return r
-    },[])
+	const tf_final = tf
+		.map(function(x, _) {
+			return { iid: x._id.iid, tradefees: x.tradefees };
+		})
+		.reduce((r, { iid, tradefees }) => {
+			var temp = r.find((o) => iid === o.iid);
 
-    const sales = await Sales.aggregate([
-        match,
-        group,
-        frOhCom,
-        TRADEFEES,
-        GP,
-        GPM,
-        AVG_SALE_PRICE,
-        AVG_DISCOUNTED_PRICE,
-        {$unwind: '$sales'},
-        {$sort: {sales: -1}}
-    ])
+			if (!temp) {
+				r.push((temp = { iid, tradefees: 0 }));
+			}
+			temp.tradefees += tradefees;
 
-    const final_sales = sales.map(({_id, quantity, sales, costs, rebates, freight, overhead, commissions, avgSalePrice, grossProfit}) => ({
-        _id, 
-        quantity,
-        sales,
-        costs,
-        rebates,
-        freight,
-        overhead,
-        commissions,
-        avgSalePrice,
-        avgSalePriceAfterDiscounts: (quantity > 0 && (sales - rebates - tf_final.filter(obj => obj.iid === _id.iid).map(obj => obj.tradefees)[0]) > 0) ? (sales - rebates - tf_final.filter(obj => obj.iid === _id.iid).map(obj => obj.tradefees)[0]) / quantity : avgSalePrice,
-        tradefees: tf_final.filter(obj => obj.iid === _id.iid).map(obj => obj.tradefees)[0],
-        grossProfit: (quantity > 0 && (sales - rebates - freight - overhead - commissions - tf_final.filter(obj => obj.iid === _id.iid).map(obj => obj.tradefees)[0]) > 0) ? grossProfit - tf_final.filter(obj => obj.iid === _id.iid).map(obj => obj.tradefees)[0] : 0,
-        grossProfitMargin: (sales > 0) ? ((grossProfit - tf_final.filter(obj => obj.iid === _id.iid).map(obj => obj.tradefees)[0]) / sales) * 100 : 0
-    }))
+			return r;
+		}, []);
 
-    if (!item) {
-        reply.code(201).send({ data: final_sales })
-    } else {
-        reply.code(201).send({ data: sales })
-    }
+	const sales = await Sales.aggregate([
+		match,
+		group,
+		frOhCom,
+		TRADEFEES,
+		GP,
+		GPM,
+		AVG_SALE_PRICE,
+		AVG_DISCOUNTED_PRICE,
+		{ $unwind: '$sales' },
+		{ $sort: { sales: -1 } }
+	]);
 
-    
-}
+	const final_sales = sales.map(
+		({ _id, quantity, sales, costs, rebates, freight, overhead, commissions, avgSalePrice, grossProfit }) => ({
+			_id,
+			quantity,
+			sales,
+			costs,
+			rebates,
+			freight,
+			overhead,
+			commissions,
+			avgSalePrice,
+			avgSalePriceAfterDiscounts:
+				quantity > 0 &&
+				sales - rebates - tf_final.filter((obj) => obj.iid === _id.iid).map((obj) => obj.tradefees)[0] > 0
+					? (sales - rebates - tf_final.filter((obj) => obj.iid === _id.iid).map((obj) => obj.tradefees)[0]) /
+						quantity
+					: avgSalePrice,
+			tradefees: tf_final.filter((obj) => obj.iid === _id.iid).map((obj) => obj.tradefees)[0],
+			grossProfit:
+				quantity > 0 &&
+				sales -
+					rebates -
+					freight -
+					overhead -
+					commissions -
+					tf_final.filter((obj) => obj.iid === _id.iid).map((obj) => obj.tradefees)[0] >
+					0
+					? grossProfit - tf_final.filter((obj) => obj.iid === _id.iid).map((obj) => obj.tradefees)[0]
+					: 0,
+			grossProfitMargin:
+				sales > 0
+					? (grossProfit - tf_final.filter((obj) => obj.iid === _id.iid).map((obj) => obj.tradefees)[0]) /
+						sales *
+						100
+					: 0
+		})
+	);
+
+	if (!item) {
+		reply.code(201).send({ data: final_sales });
+	} else {
+		reply.code(201).send({ data: sales });
+	}
+};
 
 /**
  * RETIRED ENDPOINT - maintain for personal growth
  */
 exports.getSalesForPeriodByCust = async (req, reply) => {
-    const start = req.query.start
-    const end = req.query.end
-    const cust = req.query.cust
-    const freightFactor = parseFloat(req.query.ff)
-    const overheadFactor = parseFloat(req.query.ohf)
+	const start = req.query.start;
+	const end = req.query.end;
+	const cust = req.query.cust;
+	const freightFactor = parseFloat(req.query.ff);
+	const overheadFactor = parseFloat(req.query.ohf);
 
-    const [match, group] = DEFAULT_AGG(start, end, item=null, cust)    
-    const frOhCom = CALC_FR_OH_COMM(freightFactor, overheadFactor)
-   
-    const sales = await Sales.aggregate([
-        match,
-        group,
-        frOhCom,        
-        GP,
-        GPM,
-        AVG_SALE_PRICE,
-        AVG_DISCOUNTED_PRICE,
-        {$unwind: '$sales'},
-        {$sort: {sales: -1}}
-    ])            
+	const [ match, group ] = DEFAULT_AGG(start, end, (item = null), cust);
+	const frOhCom = CALC_FR_OH_COMM(freightFactor, overheadFactor);
 
-    reply.code(201).send({ data: sales })
-}
+	const sales = await Sales.aggregate([
+		match,
+		group,
+		frOhCom,
+		GP,
+		GPM,
+		AVG_SALE_PRICE,
+		AVG_DISCOUNTED_PRICE,
+		{ $unwind: '$sales' },
+		{ $sort: { sales: -1 } }
+	]);
 
+	reply.code(201).send({ data: sales });
+};
