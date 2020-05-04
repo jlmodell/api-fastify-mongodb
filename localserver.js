@@ -7,6 +7,8 @@ fastify.register(require("fastify-tls-keygen"), {
   // key: '/path/to/save/private/key.pem',
   // Optional (default: ./cert.pem)
   // cert: '/path/to/save/public/certificate.pem'
+  key: "./key.pem",
+  cert: "./cert.pem",
 });
 
 fastify.register(require("fastify-cors"), {

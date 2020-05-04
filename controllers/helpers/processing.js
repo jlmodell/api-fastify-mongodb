@@ -374,8 +374,8 @@ exports.process_raw_sales_by_cust = (data) => {
   data.forEach((doc) => {
     if (!map.has(doc.CUST)) {
       map.set(doc.CUST, {
-        customer_id: doc.CNAME,
-        customer_name: doc.CUST,
+        customer_id: doc.CUST,
+        customer_name: doc.CNAME,
         items_desc: [],
         items_id: [],
         rx_details: [],
@@ -486,7 +486,7 @@ exports.process_raw_sales_by_cust = (data) => {
       }, []);
 
       return {
-        _id: { cid: res.customer_id, item: res.customer_name },
+        _id: { cid: res.customer_id, customer: res.customer_name },
         quantity,
         sales,
         costs,
