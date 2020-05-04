@@ -573,7 +573,7 @@ exports.process_raw_sales_by_state = (data) => {
     });
   });
 
-  return Array.from(map.values())
+  const mapped =  Array.from(map.values())
     .map((res) => {
       const {
         quantity,
@@ -597,99 +597,26 @@ exports.process_raw_sales_by_state = (data) => {
                 item: res.items_desc[ind],
                 rx: res.rx_details[ind],
               },
-              quantity: 0,
-              sales: 0,
-              costs: 0,
-              tradefees: 0,
-              freight: 0,
-              overhead: 0,
-              commissions: 0,
-              rebates: 0,
+              quantity: res.quantity_details[ind],
+              sales: res.sales_details[ind],
+              costs: res.costs_details[ind],
+              tradefees: res.tradefees_details[ind],
+              freight: res.freight_details[ind],
+              overhead: res.overhead_details[ind],
+              commissions: res.commissions_details[ind],
+              rebates: -res.rebate_details[ind],  
+              // quantity: 0,
+              // sales: 0,
+              // costs: 0,
+              // tradefees: 0,
+              // freight: 0,
+              // overhead: 0,
+              // commissions: 0,
+              // rebates: 0,
               customer_details: [],
             })
           );
-        }
-
-        temp.customer_details.push({
-          customers_id: res.customers_id[ind],
-          customers_name: res.customers_name[ind],
-          quantity_details: res.quantity_details[ind],
-          sales_details: res.sales_details[ind],
-          costs_details: res.costs_details[ind],
-          tradefees_details: res.tradefees_details[ind],
-          freight_details: res.freight_details[ind],
-          overhead_details: res.overhead_details[ind],
-          commissions_details: res.commissions_details[ind],
-          rebate_details: res.rebate_details[ind],
-        });
-
-        temp.quantity += res.quantity_details[ind];
-        temp.sales += res.sales_details[ind];
-        temp.costs += res.costs_details[ind];
-        temp.tradefees += res.tradefees_details[ind];
-        temp.freight += res.freight_details[ind];
-        temp.overhead += res.overhead_details[ind];
-        temp.commissions += res.commissions_details[ind];
-        temp.rebates += -res.rebate_details[ind];
-
-        return arr;
-      }, []);
-
-      //   sale_details.customer_details = sale_details.customer_details.customers_id.reduce(
-      //     (arr, cur, ind) => {
-      //       var temp = arr.find((r) => cur === r._id.cid);
-
-      // if (!temp) {
-      //   temp = {
-      //     _id: {
-      //       cid: cur,
-      //       customer: sale_details.customer_details.customers_name[ind],
-      //     },
-      //     quantity: 0,
-      //     sales: 0,
-      //     costs: 0,
-      //     tradefees: 0,
-      //     freight: 0,
-      //     overhead: 0,
-      //     commissions: 0,
-      //     rebates: 0,
-      //   };
-      // }
-      // temp.quantity += sale_details.customer_details.quantity_details[ind];
-      // temp.sales += sale_details.customer_details.sales_details[ind];
-      // temp.costs += sale_details.customer_details.costs_details[ind];
-      // temp.tradefees +=
-      //   sale_details.customer_details.tradefees_details[ind];
-      // temp.freight += sale_details.customer_details.freight_details[ind];
-      // temp.overhead += sale_details.customer_details.overhead_details[ind];
-      // temp.commissions +=
-      //   sale_details.customer_details.commissions_details[ind];
-      // temp.rebates += -sale_details.customer_details.rebate_details[ind];
-
-      // return arr;
-      //     },
-      //     []
-      //   );
-
-      const temp = sale_details.customer_details.map((res) => {
-        const customer_details = res.customers_id.reduce((arr, cur, ind) => {
-          var temp = arr.find((r) => cur === r._id.cid);
-          if (!temp) {
-            temp = {
-              _id: {
-                cid: cur,
-                customer: res.customers_name[ind],
-              },
-              quantity: 0,
-              sales: 0,
-              costs: 0,
-              tradefees: 0,
-              freight: 0,
-              overhead: 0,
-              commissions: 0,
-              rebates: 0,
-            };
-          }
+        } else {
           temp.quantity += res.quantity_details[ind];
           temp.sales += res.sales_details[ind];
           temp.costs += res.costs_details[ind];
@@ -698,14 +625,40 @@ exports.process_raw_sales_by_state = (data) => {
           temp.overhead += res.overhead_details[ind];
           temp.commissions += res.commissions_details[ind];
           temp.rebates += -res.rebate_details[ind];
+        }
 
-          return arr;
-        }, []);
+        var cust_det_temp = temp.customer_details.find(r => res.customers_id[ind] === r._id.cid)
 
-        return customer_details;
-      });
+        if (!cust_det_temp) {
+          temp.customer_details.push(
+            (curr_det_temp = {
+              _id: { 
+                cid: res.customers_id[ind], 
+                customer: res.customers_name[ind],
+              }, 
+              quantity: res.quantity_details[ind],
+              sales: res.sales_details[ind],
+              costs: res.costs_details[ind],
+              tradefees: res.tradefees_details[ind],
+              freight: res.freight_details[ind],
+              overhead: res.overhead_details[ind],
+              commissions: res.commissions_details[ind],
+              rebates: -res.rebate_details[ind],           
+            })
+          )
+        } else {
+          cust_det_temp.quantity += res.quantity_details[ind]
+          cust_det_temp.sales += res.sales_details[ind]
+          cust_det_temp.costs += res.costs_details[ind]
+          cust_det_temp.tradefees += res.tradefees_details[ind]
+          cust_det_temp.freight += res.freight_details[ind]
+          cust_det_temp.overhead += res.overhead_details[ind]
+          cust_det_temp.commissions += res.commissions_details[ind]
+          cust_det_temp.rebates += -res.rebate_details[ind]
+        }
 
-      console.log(temp);
+        return arr;
+      }, []);      
 
       return {
         _id: { state: res.ship_to_state },
@@ -721,6 +674,8 @@ exports.process_raw_sales_by_state = (data) => {
       };
     })
     .sort((a, b) => b.sales - a.sales);
+
+    return mapped
 };
 
 exports.process_qty_into_months = (data) => {
