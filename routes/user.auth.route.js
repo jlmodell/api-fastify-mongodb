@@ -1,10 +1,10 @@
-require('dotenv/config')
+require("dotenv/config");
 // const boom = require('boom')
-const User = require('../models/user.model')
-const bcrypt = require('bcrypt')
+const User = require("../models/user.model");
+const bcrypt = require("bcrypt");
 
 async function Login(fastify) {
-    /*
+  /*
         route =>
             /login
         test =>
@@ -15,27 +15,32 @@ async function Login(fastify) {
                     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6Im1vZGVsbC5qZWZmQG1lLmNvbSIsImlhdCI6MTU4NjE3MTQwNCwiZXhwIjoxNTg3NDY3NDA0fQ.vfSZm7Y4mYPBMFeiXuFHvKPuvy71sx3jIjnlB4dUWgo"
             }
     */
-    fastify.post('/login', async (req, reply) => {
-        try {
-            const {email, password} = req.body
-            if (!email || !password) throw new Error("Missing required parameters to login.")
+  fastify.post("/login", async (req, reply) => {
+    try {
+      const { email, password } = req.body;
 
-            const user = await User.findOne({ email })       
-            if (!user) throw new Error("Failed to login. Check your parameters and try again.")
-                        
-            const verifyPassword = await bcrypt.compare(password, user.password)
-            if (!verifyPassword) throw new Error("Failed to login. Check your parameters and try again.")
+      if (!email || !password)
+        throw new Error("Missing required parameters to login.");
 
-            const token = fastify.jwt.sign({email}, {expiresIn: '15d'})
+      const user = await User.findOne({ email });
+      if (!user)
+        throw new Error(
+          "Failed to login. Check your parameters and try again."
+        );
 
-            reply
-                .code(201)
-                .send({ token })
+      const verifyPassword = await bcrypt.compare(password, user.password);
+      if (!verifyPassword)
+        throw new Error(
+          "Failed to login. Check your parameters and try again."
+        );
 
-        } catch(err) {
-            throw new Error(err)
-        }
+      const token = fastify.jwt.sign({ email }, { expiresIn: "15d" });
+
+      reply.code(201).send({ token });
+    } catch (err) {
+      throw new Error(err);
     }
-)}
+  });
+}
 
-module.exports = Login
+module.exports = Login;
